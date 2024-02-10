@@ -1,12 +1,15 @@
 import cv2
 import time
+from emailing import send_email
 
 video = cv2.VideoCapture(0) # start a video using the webcam
 time.sleep(1) # give the camera time to wait
                   # this will create one frame per second
 
 first_frame = None
+status_list = []
 while True:
+    status = 0
     check, frame = video.read()
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # to reduce the complexity of the images by converting them to greyscale
     gray_frame_gau = cv2.GaussianBlur(gray_frame, (21, 21), 0) # to make calculations more efficient, we'll use the guassian blur method. Also to remove noise
@@ -35,19 +38,25 @@ while True:
     contours, check = cv2.findContours(dil_frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) # to detect contours around white areas
 
     for contour in contours:
-        if cv2.contourArea(contour) < 5000: # if identified white area is smaller than 10000 continue
+        if cv2.contourArea(contour) < 2000: # if identified white area is smaller than 5000, ignore it and continue looking
             continue 
         x, y, w, h = cv2.boundingRect(contour) # extract the sizes of the x & y axis and the sizes of the height and width
-        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3) # draw a rect around the original frame (colour frame)
+        rectangle = cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3) # draw a rect around the original frame (colour frame)
                                                               # the colour of the rectangle '(0, 255, 0)', '3' is the width of the rectangle
 
-        cv2.imshow("Video", frame)
+        if rectangle.any():
+            status = 1 # if object is detected, status value will be updated to 1
+    
+    status_list.append(status) # save the status of object detection in this list
+    status_list = status_list[-2:] # modifies the list tow only the last two items to see if they have changed or not 
+
+    if status_list[0] == 1 and status_list[1] == 0: # this means that the object has exited the frame as [1, 1] means it is still in th frame
+         send_email()
+
+    print(status_list)
 
 
-
-
-
-
+    cv2.imshow("Video", frame)
 
     key = cv2.waitKey(1) # this creates a keyboard key object
 
