@@ -6,6 +6,7 @@ SENDER = "odioneseose@gmail.com"
 RECEIVER = "odioneseose@gmail.com"
 
 def send_email(image_path):
+    print("send_email function started")
     email_message = EmailMessage() # create an object instance of the class
                                     # EmailMessage() behaves like a dictionary
     email_message["Subject"] = "New customer showed up!" # create the subject of the email
@@ -24,6 +25,7 @@ def send_email(image_path):
     gmail.login(SENDER, PASSWORD) # log in to mail
     gmail.sendmail(SENDER, RECEIVER, email_message.as_string())
     gmail.quit()
+    print("send_email function ended")
 
 if __name__ == "__main__":
     send_email(image_path="images/19.png")

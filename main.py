@@ -3,6 +3,7 @@ import time
 import glob
 import os
 from emailing import send_email
+from threading import Thread 
 
 video = cv2.VideoCapture(0) # start a video using the webcam
 time.sleep(1) # give the camera time to wait
@@ -13,9 +14,11 @@ status_list = []
 count = 1
 
 def clean_folder(): # function definition to clean folder
+    print("clean_folder function started")
     images = glob.glob("images/*.png")
     for image in images:
         os.remove(image) # remove each image from the folder
+    print("clean_folder function ended")
 
 while True:
     status = 0
@@ -52,7 +55,6 @@ while True:
         x, y, w, h = cv2.boundingRect(contour) # extract the sizes of the x & y axis and the sizes of the height and width
         rectangle = cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3) # draw a rect around the original frame (colour frame)
                                                               # the colour of the rectangle '(0, 255, 0)', '3' is the width of the rectangle
-
         if rectangle.any():
             status = 1 # if object is detected, status value will be updated to 1
             cv2.imwrite(f"images/{count}.png", frame) # To store images 
@@ -65,17 +67,26 @@ while True:
     status_list = status_list[-2:] # modifies the list tow only the last two items to see if they have changed or not 
 
     if status_list[0] == 1 and status_list[1] == 0: # this means that the object has exited the frame as [1, 1] means it is still in th frame
-        send_email(image_with_object)
-        clean_folder()
+        # Threading will help prevent the video from pausing when detecting frames
+        send_email_thread = Thread(target=send_email, args=(image_with_object, )) # the target is the function 'send_email', and the arguments are what is going to be passed into the function
+        send_email_thread.daemon = True # this allows the send email function to be executed in the background
+        #send_email(image_with_object)
+        clean_thread = Thread(target=clean_folder) # the target is the function 'clean_folder', and no arguments are passed into the function
+        clean_thread.daemon = True # this allows the clean_folder function to be executed in the background
+        #clean_folder()
+
+        # Calling the threads
+        send_email_thread.start() # this will start this thread and the thread will call the "send_email" function
 
     print(status_list)
 
 
     cv2.imshow("Video", frame)
-
     key = cv2.waitKey(1) # this creates a keyboard key object
 
     if key == ord("q"): # if the user presses the key "q", it will break the loop and then it will release the video
         break
 
 video.release()
+clean_thread.start() # this will start this thread and the thread will call the "clean_folder" function
+                    # this is outside of the while loop because we only want to clean the image folder after the user has pressed the "q" key
