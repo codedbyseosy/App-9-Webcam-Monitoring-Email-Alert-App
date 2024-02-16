@@ -1,6 +1,7 @@
 import cv2
 import time
 import glob
+import os
 from emailing import send_email
 
 video = cv2.VideoCapture(0) # start a video using the webcam
@@ -10,6 +11,11 @@ time.sleep(1) # give the camera time to wait
 first_frame = None
 status_list = []
 count = 1
+
+def clean_folder(): # function definition to clean folder
+    images = glob.glob("images/*.png")
+    for image in images:
+        os.remove(image) # remove each image from the folder
 
 while True:
     status = 0
@@ -60,6 +66,7 @@ while True:
 
     if status_list[0] == 1 and status_list[1] == 0: # this means that the object has exited the frame as [1, 1] means it is still in th frame
         send_email(image_with_object)
+        clean_folder()
 
     print(status_list)
 
