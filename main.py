@@ -1,5 +1,6 @@
 import cv2
 import time
+import glob
 from emailing import send_email
 
 video = cv2.VideoCapture(0) # start a video using the webcam
@@ -8,6 +9,8 @@ time.sleep(1) # give the camera time to wait
 
 first_frame = None
 status_list = []
+count = 1
+
 while True:
     status = 0
     check, frame = video.read()
@@ -46,12 +49,17 @@ while True:
 
         if rectangle.any():
             status = 1 # if object is detected, status value will be updated to 1
+            cv2.imwrite(f"images/{count}.png", frame) # To store images 
+            count = count + 1
+            all_images = glob.glob("images/*.png")
+            index = int(len(all_images)/2)
+            image_with_object = all_images[index]
     
     status_list.append(status) # save the status of object detection in this list
     status_list = status_list[-2:] # modifies the list tow only the last two items to see if they have changed or not 
 
     if status_list[0] == 1 and status_list[1] == 0: # this means that the object has exited the frame as [1, 1] means it is still in th frame
-         send_email()
+        send_email(image_with_object)
 
     print(status_list)
 
